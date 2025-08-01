@@ -1,0 +1,418 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // モバイルメニューの制御
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+
+    if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', function () {
+            if (this.classList.contains('active')) {
+                // メニューを閉じる時の処理
+                this.classList.remove('active');
+                navMenu.classList.remove('active');
+                // メニューを閉じる時にリセット処理を実行
+                resetMenu();
+                // ページ情報とトップへ戻るボタンを再表示
+                if (backToTop) backToTop.classList.add('visible');
+                if (document.getElementById('page-info')) document.getElementById('page-info').style.display = '';
+            } else {
+                // メニューを開く時の処理
+                this.classList.add('active');
+                navMenu.classList.add('active');
+                // ページ情報とトップへ戻るボタンを非表示
+                if (backToTop) backToTop.classList.remove('visible');
+                if (document.getElementById('page-info')) document.getElementById('page-info').style.display = 'none';
+            }
+        });
+    } else {
+        console.error("menuToggleまたはnavMenuが見つかりません");
+    }
+
+    // スライダーの制御
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.slider-dot');
+    const slideInterval = 5000; // スライド切り替え間隔 (ミリ秒)
+    let currentSlide = 0;
+    let slideTimer;
+
+    if (slides.length > 0 && dots.length > 0) {
+        function goToSlide(n) {
+            slides[currentSlide]?.classList.remove('active');
+            dots[currentSlide]?.classList.remove('active');
+
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide]?.classList.add('active');
+            dots[currentSlide]?.classList.add('active');
+        }
+
+        function nextSlide() {
+            goToSlide(currentSlide + 1);
+        }
+
+        function resetTimer() {
+            clearInterval(slideTimer);
+            slideTimer = setInterval(nextSlide, slideInterval);
+        }
+
+        slideTimer = setInterval(nextSlide, slideInterval);
+
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                goToSlide(index);
+                resetTimer();
+            });
+        });
+    } else {
+        console.error('スライドまたはドットが見つかりません');
+    }
+
+    // スライダーのタッチ制御
+    const sliderContainer = document.querySelector('.slider-container');
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    if (sliderContainer) {
+        sliderContainer.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        sliderContainer.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchEndX - touchStartX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    goToSlide(currentSlide - 1);
+                } else {
+                    goToSlide(currentSlide + 1);
+                }
+                resetTimer();
+            }
+        }
+    } else {
+        console.error('sliderContainerが見つかりません');
+    }
+
+    // サムネイルの制御
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    const mainImage = document.getElementById('mainImage');
+
+    if (thumbnails.length > 0 && mainImage) {
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', () => {
+                const newSrc = thumbnail.getAttribute('data-full');
+                mainImage.src = newSrc;
+            });
+        });
+    } else {
+        console.error('サムネイルまたはメイン画像が見つかりません');
+    }
+
+
+    
+    // ドロップダウンメニューの制御
+    // ドロップダウンメニューの制御部分のみを抜粋して修正
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const navLink = dropdownMenu?.querySelector('.nav-link');
+    const overlay = dropdownMenu?.querySelector('.overlay');
+    const mainCategory = document.getElementById('main-category');
+    const categoryTriggers = document.querySelectorAll('.category-trigger');
+    const backButtons = document.querySelectorAll('.back-button');
+    const subCategories = document.querySelectorAll('.sub-category');
+
+    // スクロールインジケーターをサブカテゴリーに追加
+    subCategories.forEach(subCategory => {
+        // インジケーター要素を作成
+        const indicator = document.createElement('div');
+        indicator.className = 'scroll-indicator';
+        subCategory.appendChild(indicator);
+    
+        // スクロール可能かチェックする関数
+        function checkScroll() {
+            const isScrollable = subCategory.scrollHeight > subCategory.clientHeight;
+            const isScrolledToBottom = subCategory.scrollTop + subCategory.clientHeight >= subCategory.scrollHeight - 20;
+            
+            if (isScrollable && !isScrolledToBottom) {
+                indicator.style.display = 'flex';
+            } else {
+                indicator.style.display = 'none';
+            }
+        }
+    
+        // スクロール時にチェック
+        subCategory.addEventListener('scroll', checkScroll);
+    });
+    
+    // メニューのリセット関数
+    function resetMenu() {
+        console.log('リセット実行');
+        subCategories.forEach(sub => {
+            sub.style.display = 'none';
+            console.log(`サブカテゴリー ${sub.id} を非表示に設定`);
+        });
+        if (mainCategory) {
+            mainCategory.style.display = 'grid';
+            console.log('メインカテゴリーを表示');
+        }
+    }
+    
+    if (dropdownMenu && navLink && overlay) {
+        navLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            console.log('ナビリンククリック');
+            if (!dropdownMenu.classList.contains('active')) {
+                resetMenu();
+            }
+            dropdownMenu.classList.toggle('active');
+        });
+    
+        overlay.addEventListener('click', function() {
+            console.log('オーバーレイクリック');
+            dropdownMenu.classList.remove('active');
+            resetMenu();
+        });
+    }
+    
+    if (mainCategory && categoryTriggers.length > 0) {
+        resetMenu();
+    
+        categoryTriggers.forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const category = this.closest('li').dataset.category;
+                const subCategory = document.getElementById(`${category}-category`);
+                
+                console.log('トリガークリック:', category);
+                console.log('対象サブカテゴリー:', subCategory);
+                
+                if (subCategory) {
+                    mainCategory.style.display = 'none';
+                    subCategory.style.display = 'grid';
+                    // サブカテゴリー表示後にスクロール状態をチェック
+                    setTimeout(() => {
+                        const indicator = subCategory.querySelector('.scroll-indicator');
+                        if (indicator) {
+                            const isScrollable = subCategory.scrollHeight > subCategory.clientHeight;
+                            const isScrolledToBottom = subCategory.scrollTop + subCategory.clientHeight >= subCategory.scrollHeight - 20;
+                            
+                            if (isScrollable && !isScrolledToBottom) {
+                                indicator.style.display = 'flex';
+                            } else {
+                                indicator.style.display = 'none';
+                            }
+                        }
+                    }, 100);
+                }
+            });
+        });
+    
+        backButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('戻るボタンクリック');
+                resetMenu();
+            });
+        });
+    
+        const dropdownContainer = dropdownMenu.querySelector('.dropdown-container');
+        if (dropdownContainer) {
+            dropdownContainer.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+    }
+    
+    // リサイズ時のチェック
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 768) {
+            menuToggle.classList.remove('active');
+            navMenu.classList.remove('active');
+            // リサイズでメニューが閉じられた時もリセット
+            resetMenu();
+            // ページ情報とトップへ戻るボタンを再表示
+            if (backToTop) backToTop.classList.add('visible');
+            if (document.getElementById('page-info')) document.getElementById('page-info').style.display = '';
+        }
+    });
+
+
+    //無限スクロール
+
+    const container = document.querySelector('.profile-grid');
+    const loadingElement = document.getElementById('loading');
+    const scrollData = document.getElementById('infinite-scroll-data');
+    const backToTop = document.getElementById('back-to-top');
+    const retryButton = document.getElementById('retry-button');
+    const currentPageNum = document.getElementById('current-page-num');
+
+    if (container && loadingElement && scrollData) {
+        let loading = false;
+        let currentPage = parseInt(scrollData.dataset.currentPage);
+        const maxPages = parseInt(scrollData.dataset.maxPages);
+        let lastScrollPosition = parseInt(localStorage.getItem('scrollPosition')) || 0;
+        let lastPageNumber = parseInt(localStorage.getItem('pageNumber')) || currentPage;
+
+        // スクロール位置の保存
+        function saveScrollPosition() {
+            localStorage.setItem('scrollPosition', window.scrollY.toString());
+            localStorage.setItem('pageNumber', currentPage.toString());
+        }
+
+        // スクロール位置の復元
+        if (lastScrollPosition > 0 && lastPageNumber > 1) {
+            loadPreviousPages(lastPageNumber);
+        }
+
+        function loadPreviousPages(targetPage) {
+            let promises = [];
+            for (let i = 2; i <= targetPage; i++) {
+                promises.push(loadPage(i));
+            }
+            Promise.all(promises).then(() => {
+                window.scrollTo(0, lastScrollPosition);
+            });
+        }
+
+        function loadPage(pageNum) {
+            return fetch(`${window.location.pathname}?paged=${pageNum}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newItems = doc.querySelectorAll('.profile-card');
+                    newItems.forEach(item => {
+                        container.appendChild(item.cloneNode(true));
+                    });
+                });
+        }
+
+        function loadMorePosts() {
+            if (loading || currentPage >= maxPages) return;
+            
+            loading = true;
+            loadingElement.style.display = 'block';
+            retryButton.style.display = 'none';
+            
+            const nextPage = currentPage + 1;
+            
+            fetch(`${window.location.pathname}?paged=${nextPage}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newItems = doc.querySelectorAll('.profile-card');
+                    
+                    newItems.forEach(item => {
+                        container.appendChild(item.cloneNode(true));
+                    });
+                    
+                    currentPage = nextPage;
+                    if (currentPageNum) currentPageNum.textContent = currentPage;
+                    loading = false;
+                    loadingElement.style.display = 'none';
+                    saveScrollPosition();
+                })
+                .catch(error => {
+                    console.error('Error loading more posts:', error);
+                    loading = false;
+                    loadingElement.style.display = 'none';
+                    retryButton.style.display = 'block';
+                });
+        }
+
+        // トップへ戻るボタンの表示制御
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > window.innerHeight) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // トップへ戻るボタンのクリックイベント
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // リトライボタンのクリックイベント
+        retryButton.addEventListener('click', () => {
+            loadMorePosts();
+        });
+
+        // スクロールイベントの監視
+        let scrollTimeout;
+
+        // スクロールイベントの監視部分を修正
+        window.addEventListener('scroll', () => {
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const footer = document.querySelector('.footer');
+                const footerIframe = document.getElementById('footmap'); // iframeのID
+                
+                // フッターとiframeの高さを取得
+                const footerHeight = footer ? footer.offsetHeight : 0;
+                const iframeHeight = footerIframe ? footerIframe.offsetHeight : 0;
+                const totalBottomHeight = footerHeight + iframeHeight;
+        
+                const windowHeight = window.innerHeight;
+                const scrollY = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - totalBottomHeight; // フッターとiframeの合計高さを除外
+        
+                // スクロール位置がフッターの直前に来たら読み込み
+                if (scrollY + windowHeight >= docHeight - 300) {
+                    loadMorePosts();
+                }
+                saveScrollPosition();
+            }, 100);
+        });
+
+        // ページを離れる前にスクロール位置を保存
+        window.addEventListener('beforeunload', saveScrollPosition);
+    }
+
+    // フローティングメニューの制御
+    const routeButton = document.getElementById('route-button');
+    const routeModal = document.getElementById('route-modal');
+    const closeModal = document.querySelector('.close-modal');
+
+    if (routeButton && routeModal) {
+        routeButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            routeModal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', function() {
+            routeModal.classList.remove('active');
+        });
+
+        routeModal.addEventListener('click', function(e) {
+            if (e.target === routeModal) {
+                routeModal.classList.remove('active');
+            }
+        });
+    }
+
+// ドキュメント全体のクリックイベントを追加
+document.addEventListener('click', function(event) {
+    // メニュートグルボタンとナビメニュー以外がクリックされた場合
+    if (!event.target.closest('.menu-toggle') && 
+        !event.target.closest('.nav-menu') && 
+        navMenu.classList.contains('active')) {
+        menuToggle.classList.remove('active');
+        navMenu.classList.remove('active');
+        resetMenu();
+        // ページ情報とトップへ戻るボタンを再表示
+        if (backToTop) backToTop.classList.add('visible');
+        if (document.getElementById('page-info')) document.getElementById('page-info').style.display = '';
+    }
+})
+})
